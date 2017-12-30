@@ -13,7 +13,7 @@ from keras.layers.core import Flatten, Dense, Dropout, Lambda
 from keras.layers import Input, Activation, merge
 from keras.optimizers import RMSprop
 from keras.layers.normalization import BatchNormalization
-from keras.layers.convolutional import Convolution2D, MaxPooling2D, ZeroPadding2D, AveragePooling2D
+from keras.layers.convolutional import Conv2D, MaxPooling2D, ZeroPadding2D, AveragePooling2D  # Conv2D: Keras2
 import keras.preprocessing.image as image
 from keras.utils.data_utils import get_file
 from keras.utils.layer_utils import convert_all_kernels_in_model
@@ -25,7 +25,7 @@ class Resnet50():
 
 
     def __init__(self, size=(224,224), include_top=True):
-        self.FILE_PATH = 'http://files.fast.ai/models/'
+        self.FILE_PATH = '/home/hearth/ML/course/deeplearning1/nbs/'
         self.vgg_mean = np.array([123.68, 116.779, 103.939]).reshape((3,1,1))
         self.create(size, include_top)
         self.get_classes()
@@ -58,7 +58,7 @@ class Resnet50():
 
         x = Lambda(self.vgg_preprocess)(img_input)
         x = ZeroPadding2D((3, 3))(x)
-        x = Convolution2D(64, 7, 7, subsample=(2, 2), name='conv1')(x)
+        x = Conv2D(64, 7, 7, subsample=(2, 2), name='conv1')(x)  # Keras2
         x = BatchNormalization(axis=bn_axis, name='bn_conv1')(x)
         x = Activation('relu')(x)
         x = MaxPooling2D((3, 3), strides=(2, 2))(x)
@@ -83,11 +83,12 @@ class Resnet50():
             fname = 'resnet50.h5'
         else:
             fname = 'resnet_nt.h5'
+            print ('here I go again')
 
         self.img_input = img_input
         self.model = Model(self.img_input, x)
         convert_all_kernels_in_model(self.model)
-        self.model.load_weights(get_file(fname, self.FILE_PATH+fname, cache_subdir='models'))
+        self.model.load_weights(self.FILE_PATH+fname)
 
 
     def get_batches(self, path, gen=image.ImageDataGenerator(),class_mode='categorical', shuffle=True, batch_size=8):
@@ -99,15 +100,22 @@ class Resnet50():
         model = self.model
         model.layers.pop()
         for layer in model.layers: layer.trainable=False
-        m = Dense(batches.nb_class, activation='softmax')(model.layers[-1].output)
+        m = Dense(batches.num_class, activation='softmax')(model.layers[-1].output)
         self.model = Model(model.input, m)
         self.model.compile(optimizer=RMSprop(lr=0.1), loss='categorical_crossentropy', metrics=['accuracy'])
+ 
 
+    # Keras2
+    def fit(self, batches, val_batches, batch_size, nb_epoch=1):
+        # Keras 1
+        # self.model.fit_generator(batches, samples_per_epoch=batches.nb_sample, nb_epoch=nb_epoch,
+        #        validation_data=val_batches, nb_val_samples=val_batches.nb_sample)
+        # Keras 2
+        self.model.fit_generator(batches, steps_per_epoch=int(np.ceil(batches.samples/batch_size)), epochs=nb_epoch,
+                                 validation_data=val_batches, validation_steps=int(np.ceil(val_batches.samples/batch_size)))
 
-    def fit(self, batches, val_batches, nb_epoch=1):
-        self.model.fit_generator(batches, samples_per_epoch=batches.nb_sample, nb_epoch=nb_epoch,
-                validation_data=val_batches, nb_val_samples=val_batches.nb_sample)
-
+                           
+    # Keras2
     def test(self, path, batch_size=8):
         test_batches = self.get_batches(path, shuffle=False, batch_size=batch_size, class_mode=None)
-        return test_batches, self.model.predict_generator(test_batches, test_batches.nb_sample)
+        return test_batches, self.model.predict_generator(test_batches, int(np.ceil(test_batches.samples/batch_size)))

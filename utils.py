@@ -98,8 +98,9 @@ def do_clip(arr, mx):
     return clipped/clipped.sum(axis=1)[:, np.newaxis]
 
 
-def get_batches(dirname, gen=image.ImageDataGenerator(), shuffle=True, batch_size=4, class_mode='categorical',
+def get_batches(dirname, gen=image.ImageDataGenerator(), shuffle=False, batch_size=4, class_mode='categorical',
                 target_size=(224,224)):
+    print('shuffle is ', shuffle)
     return gen.flow_from_directory(dirname, target_size=target_size,
             class_mode=class_mode, shuffle=shuffle, batch_size=batch_size)
 

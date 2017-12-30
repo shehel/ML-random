@@ -76,7 +76,11 @@ class Vgg16BN():
         self.ConvBlock(3, 512)
         self.ConvBlock(3, 512)
 
-        
+        if not include_top:
+            fname = 'vgg16_bn_conv.h5'
+            model.load_weights(self.FILE_PATH+fname)
+            return
+
         model.add(Flatten())
         self.FCBlock()
         self.FCBlock()
@@ -86,7 +90,8 @@ class Vgg16BN():
         model.load_weights(self.FILE_PATH+fname)
 
 
-    def get_batches(self, path, gen=image.ImageDataGenerator(), shuffle=True, batch_size=8, class_mode='categorical'):
+    def get_batches(self, path, gen=image.ImageDataGenerator(), shuffle=False, batch_size=8, class_mode='categorical'):
+        print('shuffle is ', shuffle)
         return gen.flow_from_directory(path, target_size=(224,224),
                 class_mode=class_mode, shuffle=shuffle, batch_size=batch_size)
 

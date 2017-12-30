@@ -47,9 +47,7 @@ class Vgg16():
         classes = [self.classes[idx] for idx in idxs]
         return np.array(preds), idxs, classes
 
-    def predictOne(self, batches, details=False, batch_size=4):
-        predict = self.model.predict_generator(batches, steps=int(np.ceil(batches.samples/batch_size)), max_queue_size=10, workers=1, use_multiprocessing=False, verbose=0)
-        return predict
+
     def ConvBlock(self, layers, filters):
         model = self.model
         for i in range(layers):
@@ -61,9 +59,6 @@ class Vgg16():
     def FCBlock(self):
         model = self.model
         model.add(Dense(4096, activation='relu'))
-        #Delete the layer below..This was an edit.
-        model.add(BatchNormalization())
-
         model.add(Dropout(0.5))
 
 
@@ -82,12 +77,13 @@ class Vgg16():
         self.FCBlock()
         model.add(Dense(1000, activation='softmax'))
 
-        fname = 'vgg16_bn.h5'
-        print (self.FILE_PATH+fname)
-
+        fname = 'vgg16.h5'
         model.load_weights(self.FILE_PATH+fname)
 
+
     def get_batches(self, path, gen=image.ImageDataGenerator(), shuffle=False, batch_size=8, class_mode='categorical'):
+        print('shuffle is ', shuffle)
+
         return gen.flow_from_directory(path, target_size=(224,224),
                 class_mode=class_mode, shuffle=shuffle, batch_size=batch_size)
 
@@ -120,14 +116,11 @@ class Vgg16():
 
     # Keras2
     def fit(self, batches, val_batches, batch_size, nb_epoch=1):
-        print (val_batches.samples, batch_size)
         self.model.fit_generator(batches, steps_per_epoch=int(np.ceil(batches.samples/batch_size)), epochs=nb_epoch,
                 validation_data=val_batches, validation_steps=int(np.ceil(val_batches.samples/batch_size)))
 
         
     # Keras2
     def test(self, path, batch_size=8):
-        print(path)
         test_batches = self.get_batches(path, shuffle=False, batch_size=batch_size, class_mode=None)
-        print (test_batches.samples)
         return test_batches, self.model.predict_generator(test_batches, int(np.ceil(test_batches.samples/batch_size)))
