@@ -58,7 +58,7 @@ class Resnet50():
 
         x = Lambda(self.vgg_preprocess)(img_input)
         x = ZeroPadding2D((3, 3))(x)
-        x = Conv2D(64, 7, 7, subsample=(2, 2), name='conv1')(x)  # Keras2
+        x = Conv2D(64, 7, 7, strides=(2, 2), name='conv1')(x)  # Keras2
         x = BatchNormalization(axis=bn_axis, name='bn_conv1')(x)
         x = Activation('relu')(x)
         x = MaxPooling2D((3, 3), strides=(2, 2))(x)
@@ -83,7 +83,6 @@ class Resnet50():
             fname = 'resnet50.h5'
         else:
             fname = 'resnet_nt.h5'
-            print ('here I go again')
 
         self.img_input = img_input
         self.model = Model(self.img_input, x)
